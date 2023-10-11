@@ -79,8 +79,8 @@ int main(int argc, char *argv[]) {
             VR_ER_opt[i][tmp_theta] = Vr_ER[tmp_theta][Nl_ER[tmp_theta]][Np_ER[tmp_theta]];
 
             tmp_vs += VR_opt[i][tmp_theta] * STEP *
-                      1.0;  //at present, VR_opt[i][tmp_theta]=E_D[R(Q,l,theta)-Kr-ar(l-l0)^2], assume uniform of theta, U[0,1],density is 1
-            tmp_vs_ER += (VR_ER_opt[i][tmp_theta] + MaintFee(l[Nl_ER[tmp_theta]])) * STEP * 1.0 / LAMDA;
+                      2.0;  //at present, VR_opt[i][tmp_theta]=E_D[R(Q,l,theta)-Kr-ar(l-l0)^2], assume uniform of theta, U[0,1],density is 1
+            tmp_vs_ER += (VR_ER_opt[i][tmp_theta] + MaintFee(l[Nl_ER[tmp_theta]])) * STEP * 2.0 / LAMDA;
 
             VR_opt[i][tmp_theta] = LAMDA * VR_opt[i][tmp_theta];
 
@@ -90,8 +90,7 @@ int main(int argc, char *argv[]) {
             tmp_theta++;
         } while (tmp_theta <= THETA);
 
-        Vs[i] = tmp_vs - c1 * Q[i];
-        Vs[i] = (1 - LAMDA) * Vs[i];
+        Vs[i] = (1 - LAMDA) * tmp_vs - c1 * Q[i];
 
         Vs_ER[i] = (1 - LAMDA) * tmp_vs_ER - c1 * Q[i];
 
@@ -120,7 +119,7 @@ int main(int argc, char *argv[]) {
 
                 VR_SL_opt[i][j][tmp_theta] = Vr_SL[tmp_theta][j][Np_SL[i][j][tmp_theta]]; //VR_opt[i][tmp_theta] = LAMDA * VR_opt[i][tmp_theta];
 
-                tmp_vs_SL += VR_SL_opt[i][j][tmp_theta] * STEP * 1.0;
+                tmp_vs_SL += VR_SL_opt[i][j][tmp_theta] * STEP * 2.0;
 
                 VR_SL_opt[i][j][tmp_theta] = LAMDA * VR_SL_opt[i][j][tmp_theta];
                 tmp_theta++;
