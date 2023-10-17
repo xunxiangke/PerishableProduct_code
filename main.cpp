@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
                     //Vs[i]  = -c*Q[i]-MaintFee(l[j]) + tmp_integral;
                     //Vs[i]  =(1-LAMDA )*Vs[i];
 
-                    Vr[tmp_theta][j][k] = -MaintFee(l[j]) + tmp_integral;
+                    Vr[tmp_theta][j][k] = - MaintFee(l[j]) + tmp_integral - c1 * Q[i];
                     Vr_ER[tmp_theta][j][k] = LAMDA * tmp_integral - MaintFee(l[j]);
 
                 }//end j k - l p
@@ -84,13 +84,13 @@ int main(int argc, char *argv[]) {
 
             VR_opt[i][tmp_theta] = LAMDA * VR_opt[i][tmp_theta];
 
-            cout << "\nQ=" << Q[i] << "\ttheta=" << tmp_theta * STEP << "\topt_l=" << Nl[tmp_theta] << "\topt_p="
-                 << Np[tmp_theta] << "\tVr=" << VR_opt[i][tmp_theta] << "\topt_l_ER=" << Nl_ER[tmp_theta]
-                 << "\topt_p_ER=" << Np_ER[tmp_theta] << "\tVr_ER=" << VR_ER_opt[i][tmp_theta] << endl;
+            cout << "\nQ=" << Q[i] << "\ttheta=" << theta[tmp_theta] << "\topt_l=" << l[Nl[tmp_theta]] << "\topt_p="
+                 << p[Np[tmp_theta]] << "\tVr=" << VR_opt[i][tmp_theta] << "\topt_l_ER=" << l[Nl_ER[tmp_theta]]
+                 << "\topt_p_ER=" << p[Np_ER[tmp_theta]] << "\tVr_ER=" << VR_ER_opt[i][tmp_theta] << endl;
             tmp_theta++;
         } while (tmp_theta <= THETA);
 
-        Vs[i] = (1 - LAMDA) * tmp_vs - c1 * Q[i];
+        Vs[i] = (1 - LAMDA) * tmp_vs;
 
         Vs_ER[i] = (1 - LAMDA) * tmp_vs_ER - c1 * Q[i];
 
