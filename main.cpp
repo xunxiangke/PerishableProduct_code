@@ -10,16 +10,10 @@
 #include "string.h"
 #include "stdlib.h"
 #include "constants.h"
-#include "json/json.h"
 #include <ctime>
-
-#include <unistd.h>
 
 using namespace std;
 
-
-double a1 = 60.0;
-double b1 = 1.0;
 
 int main(int argc, char *argv[]) {
     POINTS = (int) (END / STEP + .1); // ordering quantity
@@ -52,13 +46,15 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i <= POINTS; i++)//Q
     {
         int tmp_theta = 0;
-        double tmp_vs = 0.0, tmp_vs_ER = 0.0;
+        double tmp_vs = 0, tmp_vs_ER = 0;
         do {
 
             for (int j = 0; j <= POINTL; j++)//l
                 for (int k = 0; k <= PRICE; k++)//p price
                 {
-                    tmp_integral = Romberg0(theta[tmp_theta] * Q[i], l[j], p[k]);//integral on D
+                    Vr[tmp_theta][j][k] = NEGATIVE;
+                    Vr_ER[tmp_theta][j][k] = NEGATIVE;
+                    tmp_integral = Romberg0(theta[tmp_theta] * Q[i], l[j], p[k]); //integral on D
                     //	tmp_integral = Romberg0(tmp_theta*STEPIntg*Q[i],l[j], p[k]);//integral on D
 
                     //Vs[i]  = -c*Q[i]-MaintFee(l[j]) + tmp_integral;
@@ -67,26 +63,26 @@ int main(int argc, char *argv[]) {
                     Vr[tmp_theta][j][k] = - MaintFee(l[j]) + tmp_integral - c1 * Q[i];
                     Vr_ER[tmp_theta][j][k] = LAMDA * tmp_integral - MaintFee(l[j]);
 
-                }//end j k - l p
+                } //end j->l, k->p
 
-            opt_R_pl(Vr[tmp_theta], Nl[tmp_theta], Np[tmp_theta]);
-            opt_R_pl(Vr_ER[tmp_theta], Nl_ER[tmp_theta], Np_ER[tmp_theta]);
+            opt_R_pl(Vr[tmp_theta], Nl[i][tmp_theta], Np[i][tmp_theta]);
+            opt_R_pl(Vr_ER[tmp_theta], Nl_ER[i][tmp_theta], Np_ER[i][tmp_theta]);
 
-            z[i][tmp_theta] = Y0 * l[Nl[tmp_theta]] * pow(p[Np[tmp_theta]], -K) / (theta[tmp_theta] * Q[i]);
-            z_ER[i][tmp_theta] = Y0 * l[Nl_ER[tmp_theta]] * pow(p[Np_ER[tmp_theta]], -K) / (theta[tmp_theta] * Q[i]);
+            z[i][tmp_theta] = Y0 * l[Nl[i][tmp_theta]] * pow(p[Np[i][tmp_theta]], -K) / (theta[tmp_theta] * Q[i]);
+            z_ER[i][tmp_theta] = Y0 * l[Nl_ER[i][tmp_theta]] * pow(p[Np_ER[i][tmp_theta]], -K) / (theta[tmp_theta] * Q[i]);
 
-            VR_opt[i][tmp_theta] = Vr[tmp_theta][Nl[tmp_theta]][Np[tmp_theta]];
-            VR_ER_opt[i][tmp_theta] = Vr_ER[tmp_theta][Nl_ER[tmp_theta]][Np_ER[tmp_theta]];
+            VR_opt[i][tmp_theta] = Vr[tmp_theta][Nl[i][tmp_theta]][Np[i][tmp_theta]];
+            VR_ER_opt[i][tmp_theta] = Vr_ER[tmp_theta][Nl_ER[i][tmp_theta]][Np_ER[i][tmp_theta]];
 
-            tmp_vs += VR_opt[i][tmp_theta] * STEP *
-                      2.0;  //at present, VR_opt[i][tmp_theta]=E_D[R(Q,l,theta)-Kr-ar(l-l0)^2], assume uniform of theta, U[0,1],density is 1
-            tmp_vs_ER += (VR_ER_opt[i][tmp_theta] + MaintFee(l[Nl_ER[tmp_theta]])) * STEP * 2.0 / LAMDA;
+            tmp_vs += VR_opt[i][tmp_theta] * STEPIntg *
+                      2.0;  //at present, VR_opt[i][tmp_theta]=E_D[R(Q,l,theta)-Kr-ar(l-l0)^2], assume uniform of theta, U[0.5,1],density is 2
+            tmp_vs_ER += (VR_ER_opt[i][tmp_theta] + MaintFee(l[Nl_ER[i][tmp_theta]])) * STEPIntg * 2.0 / LAMDA;
 
             VR_opt[i][tmp_theta] = LAMDA * VR_opt[i][tmp_theta];
 
-            cout << "\nQ=" << Q[i] << "\ttheta=" << theta[tmp_theta] << "\topt_l=" << l[Nl[tmp_theta]] << "\topt_p="
-                 << p[Np[tmp_theta]] << "\tVr=" << VR_opt[i][tmp_theta] << "\topt_l_ER=" << l[Nl_ER[tmp_theta]]
-                 << "\topt_p_ER=" << p[Np_ER[tmp_theta]] << "\tVr_ER=" << VR_ER_opt[i][tmp_theta] << endl;
+            cout << "\nQ=" << Q[i] << "\ttheta=" << theta[tmp_theta] << "\topt_l=" << l[Nl[i][tmp_theta]] << "\topt_p="
+                 << p[Np[i][tmp_theta]] << "\tVr=" << VR_opt[i][tmp_theta] << "\topt_l_ER=" << l[Nl_ER[i][tmp_theta]]
+                 << "\topt_p_ER=" << p[Np_ER[i][tmp_theta]] << "\tVr_ER=" << VR_ER_opt[i][tmp_theta] << endl;
             tmp_theta++;
         } while (tmp_theta <= THETA);
 
@@ -107,10 +103,11 @@ int main(int argc, char *argv[]) {
         for (int j = 0; j <= POINTL; j++)//l
         {
             int tmp_theta = 0;
-            double tmp_vs_SL = 0.0;
+            double tmp_vs_SL = 0;
             do {        //given tmp_theta, retailer has random yield quantity--theta*Q[i]
                 for (int k = 0; k <= PRICE; k++)//p price
                 {
+                    Vr_SL[tmp_theta][j][k] = NEGATIVE;
                     tmp_integral = Romberg0(theta[tmp_theta] * Q[i], l[j], p[k]);//integral on D
                     Vr_SL[tmp_theta][j][k] = -MaintFee(l[j]) + tmp_integral;
 
@@ -119,7 +116,7 @@ int main(int argc, char *argv[]) {
 
                 VR_SL_opt[i][j][tmp_theta] = Vr_SL[tmp_theta][j][Np_SL[i][j][tmp_theta]]; //VR_opt[i][tmp_theta] = LAMDA * VR_opt[i][tmp_theta];
 
-                tmp_vs_SL += VR_SL_opt[i][j][tmp_theta] * STEP * 2.0;
+                tmp_vs_SL += VR_SL_opt[i][j][tmp_theta] * STEPIntg * 2.0;
 
                 VR_SL_opt[i][j][tmp_theta] = LAMDA * VR_SL_opt[i][j][tmp_theta];
                 tmp_theta++;
@@ -188,7 +185,7 @@ double Profit(double l, double price, double q, double epsilon)//计算R(Q,l,the
 {
     double tmp;
 
-    tmp = Demand(price, l);//*epsilon;
+    tmp = Demand(price, l)*epsilon;//;
 
     tmp = price * min(tmp, q);
     return (tmp * N(epsilon, 1));
@@ -296,96 +293,96 @@ void opt_r(double v[PINTY], int &N_y, double &v_opt) {
 * 迭代上限为64次?
 *******************************************************************/
 
-//double Romberg0(double q,double l, double price)  //Romberg0(Q[i],l[j], p[k])
-//{
-//    double eps = 0.0000001;
-//    double	a,  b;
-//    ///////////////////////////////////////////
-//    a = MEAN1-4*SIGMA1; b = MEAN1+4*SIGMA1;
-//    //////////////////////////////////////////H(double x,double d, int flg)
-//    double T[64];
-//    double hh=b-a;//, a=dt, b=ut;//a=x-ut, b= x-dt;
-//    int n=1;
-//    int tmp; // ++储存循环次数
-//    //Profit(double l, double price, double q, double epsilon)
-//
-//    T[0]=hh*(Profit(l,price,q,a)/4.0+Profit(l,price,q,b)/4.0+Profit(l,price,q,a+hh/2.0)/2.0);//??????
-//    T[1]=hh*(Profit(l,price,q,b)/6.0+Profit(l,price,q,a)/6.0+Profit(l,price,q,a+hh/2.0)/1.5);//?????
-//
-//    for(int i=2;fabs(T[i-2]-T[i-1])>eps;++i)
-//    {
-//        //计算递推梯形值,base
-//        hh/=2.0;
-//        n<<=1;//分数点
-//        int j;
-//        double base=T[0]/hh;
-//        double y=a+hh/2.0;//(ut+dt)/2.0;//x - (ut+dt)/2.0,
-//        for(j=0;j<n;++j)
-//        {
-//            //if(flg==0)
-//            base+=Profit(l,price,q,y);
-//            //else base+=Demand(x,flg)*N(y,flg);
-//            y+=hh;
-//        }
-//        base=base*hh/2.0;
-//        //计算外推加速值,T[0]->T[i]
-//        double k1=4.0/3.0,k2=1.0/3.0;
-//        for(j=0;j<i;++j)
-//        {
-//            double hand=k1*base-k2*T[j];
-//            T[j]=base;
-//            base=hand;
-//            k2=k2/(4.0*k1-k2);
-//            k1=k2+1.0;
-//        }
-//        //tmp = i;
-//        T[i]=base;
-//    }
-//    return T[3];
-//}
-
-
-double Romberg0(double q,double l, double price)
+double Romberg0(double q,double l, double price)  //Romberg0(Q[i],l[j], p[k])
 {
-    size_t max_steps = 100000;
-    double acc = 0.0000001;
-    double a,b;
+    double eps = 0.0000001;
+    double	a,  b;
+    ///////////////////////////////////////////
     a = MEAN1-4*SIGMA1; b = MEAN1+4*SIGMA1;
-    double R1[max_steps], R2[max_steps]; // buffers
-    double *Rp = &R1[0], *Rc = &R2[0]; // Rp is previous row, Rc is current row
-    double h = b-a; //step size
-    Rp[0] = (Profit(l,price,q,a) + Profit(l,price,q,b)) * h * 0.5; // first trapezoidal step
+    //////////////////////////////////////////H(double x,double d, int flg)
+    double T[64];
+    double hh=b-a;//, a=dt, b=ut;//a=x-ut, b= x-dt;
+    int n=1;
+    int tmp; // ++储存循环次数
+    //Profit(double l, double price, double q, double epsilon)
 
-    // print_row(0, Rp);
+    T[0]=hh*(Profit(l,price,q,a)/4.0+Profit(l,price,q,b)/4.0+Profit(l,price,q,a+hh/2.0)/2.0);//??????
+    T[1]=hh*(Profit(l,price,q,b)/6.0+Profit(l,price,q,a)/6.0+Profit(l,price,q,a+hh/2.0)/1.5);//?????
 
-    for (size_t i = 1; i < max_steps; ++i) {
-        h /= 2.;
-        double c = 0;
-        size_t ep = 1 << (i-1); //2^(n-1)
-        for (size_t j = 1; j <= ep; ++j) {
-            c += Profit(l,price,q,a + (2 * j - 1) * h);
+    for(int i=2;fabs(T[i-2]-T[i-1])>eps;++i)
+    {
+        //计算递推梯形值,base
+        hh/=2.0;
+        n<<=1;//分数点
+        int j;
+        double base=T[0]/hh;
+        double y=a+hh/2.0;//(ut+dt)/2.0;//x - (ut+dt)/2.0,
+        for(j=0;j<n;++j)
+        {
+            //if(flg==0)
+            base+=Profit(l,price,q,y);
+            //else base+=Demand(x,flg)*N(y,flg);
+            y+=hh;
         }
-        Rc[0] = h*c + .5*Rp[0]; // R(i,0)
-
-        for (size_t j = 1; j <= i; ++j) {
-            double n_k = pow(4, j);
-            Rc[j] = (n_k*Rc[j-1] - Rp[j-1]) / (n_k-1); // compute R(i,j)
+        base=base*hh/2.0;
+        //计算外推加速值,T[0]->T[i]
+        double k1=4.0/3.0,k2=1.0/3.0;
+        for(j=0;j<i;++j)
+        {
+            double hand=k1*base-k2*T[j];
+            T[j]=base;
+            base=hand;
+            k2=k2/(4.0*k1-k2);
+            k1=k2+1.0;
         }
-
-        // Print ith row of R, R[i,i] is the best estimate so far
-        // print_row(i, Rc);
-
-        if (i > 1 && fabs(Rp[i-1]-Rc[i]) < acc) {
-            return Rc[i];
-        }
-
-        // swap Rn and Rc as we only need the last row
-        double *rt = Rp;
-        Rp = Rc;
-        Rc = rt;
+        //tmp = i;
+        T[i]=base;
     }
-    return Rp[max_steps-1]; // return our best guess
+    return T[3];
 }
+
+
+//double Romberg0(double q,double l, double price)
+//{
+//    size_t max_steps = 100000;
+//    double acc = 0.0000001;
+//    double a,b;
+//    a = MEAN1-4*SIGMA1; b = MEAN1+4*SIGMA1;
+//    double R1[max_steps], R2[max_steps]; // buffers
+//    double *Rp = &R1[0], *Rc = &R2[0]; // Rp is previous row, Rc is current row
+//    double h = b-a; //step size
+//    Rp[0] = (Profit(l,price,q,a) + Profit(l,price,q,b)) * h * 0.5; // first trapezoidal step
+//
+//    // print_row(0, Rp);
+//
+//    for (size_t i = 1; i < max_steps; ++i) {
+//        h /= 2.;
+//        double c = 0;
+//        size_t ep = 1 << (i-1); //2^(n-1)
+//        for (size_t j = 1; j <= ep; ++j) {
+//            c += Profit(l,price,q,a + (2 * j - 1) * h);
+//        }
+//        Rc[0] = h*c + .5*Rp[0]; // R(i,0)
+//
+//        for (size_t j = 1; j <= i; ++j) {
+//            double n_k = pow(4, j);
+//            Rc[j] = (n_k*Rc[j-1] - Rp[j-1]) / (n_k-1); // compute R(i,j)
+//        }
+//
+//        // Print ith row of R, R[i,i] is the best estimate so far
+//        // print_row(i, Rc);
+//
+//        if (i > 1 && fabs(Rp[i-1]-Rc[i]) < acc) {
+//            return Rc[i];
+//        }
+//
+//        // swap Rn and Rc as we only need the last row
+//        double *rt = Rp;
+//        Rp = Rc;
+//        Rc = rt;
+//    }
+//    return Rp[max_steps-1]; // return our best guess
+//}
 
 //////////////////////////////
 void output_db() {
@@ -407,9 +404,10 @@ void output_db() {
             << endl;
     do//for(int i =0;i<=THETA;i++)
     {
-        g << theta[i] << "\t\t" << l[Nl[i]] << "\t" << p[Np[i]] << "\t" << z[Nq][i] << "\t\t" << VR_opt[Nq][i]
-          << "\t\t" << l[Nl_ER[i]] << "\t" << p[Np_ER[i]] << "\t" << z[Nq_ER][i] << "\t\t" << VR_ER_opt[Nq_ER][i]
-          << "\t\t" << p[Np_SL[Nq_SL][Nl_SL][i]] << "\t\t" << VR_SL_opt[Nq_SL][Nl_SL][i] << endl;
+        g << theta[i] << "\t\t" << l[Nl[Nq][i]] << "\t" << p[Np[Nq][i]] << "\t" << z[Nq][i] << "\t\t" << VR_opt[Nq][i]
+          << "\t\t" << l[Nl_ER[Nq][i]] << "\t" << p[Np_ER[Nq][i]] << "\t" << z[Nq_ER][i] << "\t\t" << VR_ER_opt[Nq_ER][i]
+          << "\t\t" << p[Np_SL[Nq_SL][Nl_SL][i]]
+          << "\t\t" << VR_SL_opt[Nq_SL][Nl_SL][i] << endl;
         i++;
     } while (i <= THETA);
 
@@ -428,71 +426,4 @@ void output_db() {
       << endl;
 
     g.close();
-}
-
-void save_json() {
-    int i = 0;
-    stringstream B_str;  // Basic model detail string
-    B_str<<"theta_i\tOpt_l\tOpt_p\tOpt_z\tVR_opt"<<endl;
-
-    stringstream ER_str; // ER model detail string
-    ER_str<<"theta_i\tOpt_l_ER\tOpt_p_ER\tOpt_z_ER\tVR_ER_opt"<<endl;
-
-    stringstream SL_str; // Supplier lead model detail string
-    SL_str<<"theta_i\tOpt_p_SL\tVR_SL_opt"<<endl;
-
-    while(i <= THETA){
-        B_str << theta[i] << "\t" << l[Nl[i]] << "\t" << p[Np[i]] << "\t" << z[Nq][i] << "\t" <<VR_opt[Nq][i] << endl;
-        ER_str << theta[i] << l[Nl_ER[i]] << "\t" << p[Np_ER[i]] << "\t" << z[Nq_ER][i] << "\t" << VR_ER_opt[Nq_ER][i]
-               << endl;
-        SL_str << theta[i] << "\t" << p[Np_SL[Nq_SL][Nl_SL][i]] << "\t" << VR_SL_opt[Nq_SL][Nl_SL][i] << endl;
-        i++;
-    }
-
-    string B_str_res(B_str.str());
-    string ER_str_res(ER_str.str());
-    string SL_str_res(SL_str.str());
-
-
-    Json::Value root;
-
-    // Baisc model
-    Json::Value basic;
-    basic["opt_q"] = Q[Nq];
-    basic["opt_Vs"] = Vs[Nq];
-    basic["retailer"] = B_str_res;
-    root["basic"] = Json::Value(basic);
-
-    // Revenue sharing model(ER)
-    Json::Value ER;
-    ER["opt_q"] = Q[Nq_ER];
-    ER["opt_Vs"] = Vs_ER[Nq_ER];
-    ER["retailer"] = ER_str_res;
-    root["ER"] = Json::Value(ER);
-
-    // Supplier lead lifespan investment model(SL)
-    Json::Value SL;
-    SL["opt_q"] = Q[Nq_SL];
-    SL["opt_l"] = l[Nl_SL];
-    SL["opt_Vs"] = Vs_SL[Nq_SL][Nl_SL];
-    SL["retailer"] = SL_str_res;
-    root["SL"] = Json::Value(SL);
-
-    // Ootput without indent
-    cout << "StyledWriter:" << endl;
-    Json::StyledWriter sw;
-    cout << sw.write(root) << endl << endl;
-
-    // Output json to file
-    int timestamp  = std::time(0);  // Using timestamp to name the json file
-    ostringstream tmp_str;
-    tmp_str<<timestamp<<".json";
-    string file_name = tmp_str.str();
-
-    fstream os;
-    os.open(file_name, std::ios::out | std::ios::app);
-    if (!os.is_open())
-        cout << "error：can not find or create the file which named \" demo.json\"." << endl;
-    os << sw.write(root);
-    os.close();
 }

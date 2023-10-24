@@ -1,16 +1,17 @@
 #define c1 2.0    //variable cost
 
 
-#define LAMDA 0.2     //revenue sharing coefficient *****
+#define LAMDA 0.5     //revenue sharing coefficient *****
 #define Y0  40//40
 #define K   2
 #define KR  2//0.3//0.2// 8
 
-#define END 1000//100//0~END iteration
+#define END 100 //100//0~END iteration
 #define L0  2
 #define LM  70 // maximum life-time
 #define PRI 20.0
-
+double a1 = 60.0;
+double b1 = 1.0;
 
 
 #define PINTY 702 //maximum Point for ordering
@@ -39,17 +40,17 @@ double theta[PINTHETA];//****
 //#define Alpha1 5.0
 #define Alpha_r 1// 0.1 // m(l)=Alpha_r(l-l0)^2
 
-#define STEP 2//0.5//0.2//follow step search
+#define STEP 2 //2//0.5//0.2//follow step search
 #define STEPIntg 0.05//theta's integral precision
 //#define TT  2   //theta
-
+#define NEGATIVE -99999.0
 
 //double Vs[PINTY][PINTL+1][PRICEP];
 double Vs[PINTY];
 double Vr[PINTHETA][PINTL+1][PRICEP];
 double VR_opt[PINTY][PINTHETA];
 double z[PINTY][PINTHETA];
-int Nl[PINTHETA], Np[PINTHETA];
+int Nl[PINTY][PINTHETA], Np[PINTY][PINTHETA];
 int Nq;
 
 //Another Revenue Sharing
@@ -57,7 +58,7 @@ double Vs_ER[PINTY];
 double Vr_ER[PINTHETA][PINTL+1][PRICEP];
 double VR_ER_opt[PINTY][PINTHETA];
 double z_ER[PINTY][PINTHETA];
-int Nl_ER[PINTHETA], Np_ER[PINTHETA];
+int Nl_ER[PINTY][PINTHETA], Np_ER[PINTY][PINTHETA];
 int Nq_ER;
 //Supplier Leads lifespan investment
 double Vs_SL[PINTY][PINTL+1];
