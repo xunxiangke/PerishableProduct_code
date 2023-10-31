@@ -1,7 +1,7 @@
 #define c1 2.0    //variable cost
 
 
-#define LAMDA 0.5     //revenue sharing coefficient *****
+#define LAMDA 0.7425     //revenue sharing coefficient *****
 #define Y0  40//40
 #define K   2
 #define KR  2//0.3//0.2// 8
@@ -56,10 +56,12 @@ int Nq;
 //Another Revenue Sharing
 double Vs_ER[PINTY];
 double Vr_ER[PINTHETA][PINTL+1][PRICEP];
+double Vc_ER[PINTY]; // Centralized Total Profit
 double VR_ER_opt[PINTY][PINTHETA];
 double z_ER[PINTY][PINTHETA];
 int Nl_ER[PINTY][PINTHETA], Np_ER[PINTY][PINTHETA];
 int Nq_ER;
+int Nq_c_ER; // Centralized Total Profit
 //Supplier Leads lifespan investment
 double Vs_SL[PINTY][PINTL+1];
 double Vr_SL[PINTHETA][PINTL+1][PRICEP];

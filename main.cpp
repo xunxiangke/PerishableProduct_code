@@ -10,6 +10,7 @@
 #include "string.h"
 #include "stdlib.h"
 #include "constants.h"
+#include "json/json.h"
 #include <ctime>
 
 using namespace std;
@@ -426,4 +427,84 @@ void output_db() {
       << endl;
 
     g.close();
+}
+
+void save_json() {
+    int i = 0;
+    stringstream B_str;  // Basic model detail string
+    B_str<<"theta_i\tOpt_l\tOpt_p\tOpt_z\tVR_opt"<<endl;
+
+    stringstream ER_str; // ER model detail string
+    ER_str<<"theta_i\tOpt_l_ER\tOpt_p_ER\tOpt_z_ER\tVR_ER_opt"<<endl;
+
+    stringstream SL_str; // Supplier lead model detail string
+    SL_str<<"theta_i\tOpt_p_SL\tVR_SL_opt"<<endl;
+
+    while(i <= THETA){
+        B_str << theta[i] << "\t" << l[Nl[Nq][i]] << "\t" << p[Np[Nq][i]] << "\t" << z[Nq][i] << "\t" <<VR_opt[Nq][i] << endl;
+        ER_str << theta[i] << l[Nl_ER[Nq][i]] << "\t" << p[Np_ER[Nq][i]] << "\t" << z[Nq_ER][i] << "\t" << VR_ER_opt[Nq_ER][i]
+               << endl;
+        SL_str << theta[i] << "\t" << p[Np_SL[Nq_SL][Nl_SL][i]] << "\t" << VR_SL_opt[Nq_SL][Nl_SL][i] << endl;
+        i++;
+    }
+
+    string B_str_res(B_str.str());
+    string ER_str_res(ER_str.str());
+    string SL_str_res(SL_str.str());
+
+
+    Json::Value root;
+    // save the model parameter
+    root["lambda"] = LAMDA;
+
+
+    // Baisc model
+    Json::Value basic;
+    basic["opt_q"] = Q[Nq];
+    basic["opt_Vs"] = Vs[Nq];
+    basic["retailer"] = B_str_res;
+    root["basic"] = Json::Value(basic);
+
+    // Revenue sharing model(ER)
+    Json::Value ER;
+    ER["opt_q"] = Q[Nq_ER];
+    ER["opt_Vs"] = Vs_ER[Nq_ER];
+    ER["retailer"] = ER_str_res;
+    root["ER"] = Json::Value(ER);
+
+    // Supplier lead lifespan investment model(SL)
+    Json::Value SL;
+    SL["opt_q"] = Q[Nq_SL];
+    SL["opt_l"] = l[Nl_SL];
+    SL["opt_Vs"] = Vs_SL[Nq_SL][Nl_SL];
+    SL["retailer"] = SL_str_res;
+    root["SL"] = Json::Value(SL);
+
+    // Model boundary
+    Json::Value bound;
+    bound["q_lb"] = 0;
+    bound["q_ub"] = END;
+    bound["l_lb"] = L0;
+    bound["l_ub"] = LM;
+    bound["p_lb"] = c1;
+    bound["p_ub"] = PRI;
+    root["bound"] = Json::Value(bound);
+
+    // Ootput without indent
+    cout << "StyledWriter:" << endl;
+    Json::StyledWriter sw;
+    cout << sw.write(root) << endl << endl;
+
+    // Output json to file
+    int timestamp  = std::time(0);  // Using timestamp to name the json file
+    ostringstream tmp_str;
+    tmp_str<<timestamp<<".json";
+    string file_name = tmp_str.str();
+
+    fstream os;
+    os.open(file_name, std::ios::out | std::ios::app);
+    if (!os.is_open())
+        cout << "error：can not find or create the file which named \" demo.json\"." << endl;
+    os << sw.write(root);
+    os.close();
 }
